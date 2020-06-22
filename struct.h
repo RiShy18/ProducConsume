@@ -3,17 +3,17 @@
 
 
 typedef struct { //Struct de cada segmento del buffer
-    int processID;
-    char msg[10];
-    char date[50];
-} Message;
-
-typedef struct {
     int inUse;
     int processID;
     char msg[10];
     char date[50];
-} Buffer;
+} Memory;
+
+typedef struct {
+    int size;
+    Memory data[5];
+    int S;
+} buffer;
 
 typedef struct {
     int numSem; //Número de semáforos

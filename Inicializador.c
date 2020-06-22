@@ -1,16 +1,20 @@
-/** @file module.c
+/** @file Inicializador.c
  * 
  * @brief Modulo inicializador del productor/consumidor 
  *
  * @par       
- * COPYRIGHT NOTICE: (c) 2018 Barr Group. All rights reserved.
+ * COPYRIGHT NOTICE: (R) 2020 RMR. GNU licensed.
  */
 /* ----------------------------------Include Spot------------------------ */
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <time.h>
-
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/mman.h>
+#include "struct.h"
+#include "Memtools.h"
 //#include “module.h”
 /*----------------------------------End of Include Spot------------------ */
 
@@ -22,17 +26,11 @@
  *
  * @return int
  */
-
+//--------------------------------Constant Spot---------------------------------------
+#define STORAGE_ID "/SHM_TEST"
+#define DATA "Hello, World! From PID %d"
     //--------------------------------Variable Spot---------------------------------------
-    int numSem; //Número de semáforos
-    int numCons; //Max de consumidores
-    int numProd; //Max de productores
 
-    int msgInBuff; //Mensajes en Buffer
-    int totalMsg; //Total de Mensajes
-    int deletedCons; //Consumidores borrados
-
-    int autodestroy; //Flag to terminate all
 
     //Variables de interacción con el usuario
     char *bufferName;
@@ -62,23 +60,8 @@ void *realloc(int *ptr, size_t size);
 
     //---------------------------------Function Spot--------------------------------------
 
-struct segment{ //Struct de cada segmento del buffer
-    int processID;
-    char msg[10];
-    char date[50];
-};
 
-struct buffer{
-    int inUse;
-    char Name;
-    int size;
-    int *body;
-};
 
-void createBuf( bufferSize, bufferName){
-    printf("Creando un buffer");
-
-}
 
 int main(int argc, char * argv[])
 { 
@@ -108,10 +91,71 @@ int main(int argc, char * argv[])
         printf("El tamaño del buffer será de %i\n",bufferSize);
     }
 
-    createBuf(bufferSize, &bufferName);
     printf("Buffer creado");
+    typedef struct {
+    int size;
+    Memory data[bufferSize];
+    int S;
+    } buffer;
 
+    int res;
+	int fd;
+	int len;
+	pid_t pid;
+    buffer *addr;
+	buffer data;
 
+    size_t size = sizeof(data);
+
+	pid = getpid();
+	//sprintf(data, DATA, pid);
+
+    data.size = bufferSize;
+
+    for(int i = 0; i < 4; i++){
+        data.data[i].processID = i;
+    }
+    data.S = 1;
+
+	// get shared memory file descriptor (NOT a file)
+	fd = shm_open(STORAGE_ID, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+	if (fd == -1)
+	{
+		perror("open");
+		return 10;
+	}
+
+	// extend shared memory object as by default it's initialized with size 0
+	res = ftruncate(fd, size);
+	if (res == -1)
+	{
+		perror("ftruncate");
+		return 20;
+	}
+
+	// map shared memory to process address space
+	addr = (struct buffer *) mmap(NULL, size, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
+	if (addr == MAP_FAILED)
+	{
+		perror("mmap");
+		return 30;
+	}
+
+	// place data into memory
+	//len = strlen(data) + 1;
+	//memcpy(addr, data, len);
+
+    addr->size = data.size;
+
+    addr->S = data.S;
+
+    for(int i = 0; i < 4; i++){
+        addr->data[i].processID = data.data[i].processID;
+    }
+
+	// wait for someone to read it
+	//sleep(10);
+    printf("Done SettingUp\n");
 
 
 

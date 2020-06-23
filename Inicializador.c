@@ -94,8 +94,8 @@ int main(int argc, char * argv[])
     printf("Buffer creado");
     typedef struct {
     int size;
-    Memory data[bufferSize];
     int S;
+    Memory data[bufferSize];
     } buffer;
 
     int res;
@@ -118,7 +118,7 @@ int main(int argc, char * argv[])
     data.S = 1;
 
 	// get shared memory file descriptor (NOT a file)
-	fd = shm_open(STORAGE_ID, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+	fd = shm_open(bufferName, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
 	if (fd == -1)
 	{
 		perror("open");
@@ -134,7 +134,7 @@ int main(int argc, char * argv[])
 	}
 
 	// map shared memory to process address space
-	addr = (struct buffer *) mmap(NULL, size, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
+	addr = (buffer *) mmap(NULL, size, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
 	if (addr == MAP_FAILED)
 	{
 		perror("mmap");

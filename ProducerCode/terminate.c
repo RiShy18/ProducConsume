@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#define STORAGE_ID "/SHM_TEST"
+#define STORAGE_ID "holis"
 //#define STORAGE_SIZE 32
 #define DATA "Hello, World! From PID %d"
 
@@ -21,6 +21,10 @@ struct buffer
 
 int main(int argc, char *argv[])
 {
+	if(argc < 2){
+		printf("Missing arguments, please provide buffer name\n");
+		return 30;
+	}
     int res;
 	int fd;
 	int len;
@@ -32,7 +36,7 @@ int main(int argc, char *argv[])
 
 	pid = getpid();
 
-    fd = shm_open(STORAGE_ID, O_RDONLY, S_IRUSR | S_IWUSR);
+    fd = shm_open(argv[1], O_RDONLY, S_IRUSR | S_IWUSR);
 	if (fd == -1)
 	{
 		perror("open");

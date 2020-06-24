@@ -12,7 +12,6 @@ typedef struct { //Struct de cada segmento del buffer
 
 typedef struct {
     int size;
-    int S;
     Memory data[5];
 } buffer;
 

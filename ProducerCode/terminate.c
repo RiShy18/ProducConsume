@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define STORAGE_ID "holis"
 //#define STORAGE_SIZE 32
@@ -17,6 +18,12 @@ struct buffer
     int S;
 };
 
+typedef struct {
+    int S;
+	int procCount;
+	int index;
+    int pids[];
+} Semaforo;
 
 
 int main(int argc, char *argv[])
@@ -31,6 +38,11 @@ int main(int argc, char *argv[])
 	pid_t pid;
 	struct buffer *addr;
 	struct buffer data;
+	Semaforo *sem_m;
+
+	char *sem_msg = malloc(sizeof(char) * (strlen(argv[1]) + 2));
+
+    sprintf(sem_msg, "s_%s", argv[1]);
 
     size_t size = sizeof(data);
 
@@ -59,10 +71,40 @@ int main(int argc, char *argv[])
 	}
 
 	// shm_open cleanup
-	fd = shm_unlink(STORAGE_ID);
+	fd = shm_unlink(argv[1]);
 	if (fd == -1)
 	{
-		perror("unlink");
+		perror("unlink1");
+		return 100;
+	}
+
+	fd = shm_open(sem_msg, O_RDONLY, S_IRUSR | S_IWUSR);
+	if (fd == -1)
+	{
+		perror("open");
+		return 10;
+	}
+
+	// map shared memory to process address space
+	sem_m = (Semaforo *) mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
+	if (addr == MAP_FAILED)
+	{
+		perror("mmap");
+		return 30;
+	}
+    // mmap cleanup
+	res = munmap(sem_m, sizeof(Semaforo));
+	if (res == -1)
+	{
+		perror("munmap");
+		return 40;
+	}
+
+	// shm_open cleanup
+	fd = shm_unlink(sem_msg);
+	if (fd == -1)
+	{
+		perror("unlink2");
 		return 100;
 	}
 

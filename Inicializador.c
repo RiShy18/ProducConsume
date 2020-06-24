@@ -15,6 +15,8 @@
 #include <sys/mman.h>
 #include "struct.h"
 #include "Memtools.h"
+#include <string.h>
+#include <stdlib.h>
 //#include “module.h”
 /*----------------------------------End of Include Spot------------------ */
 
@@ -28,6 +30,7 @@
  */
 //--------------------------------Constant Spot---------------------------------------
 #define STORAGE_ID "/SHM_TEST"
+#define S_Prefix "s_%s"
 #define DATA "Hello, World! From PID %d"
     //--------------------------------Variable Spot---------------------------------------
 
@@ -37,7 +40,7 @@
     int bufferSize;
 
 
-void *realloc(int *ptr, size_t size);
+//void *realloc(int *ptr, size_t size);
 
     char *inputString(FILE* fp, size_t size){
     //The size is extended by the input with the value of the provisional
@@ -57,6 +60,14 @@ void *realloc(int *ptr, size_t size);
 
     return realloc(str, sizeof(char)*len);
 }
+
+typedef struct {
+    int S;
+    int procCount;
+    int index;
+    int pids[];
+} Semaforo;
+
 
     //---------------------------------Function Spot--------------------------------------
 
@@ -91,10 +102,9 @@ int main(int argc, char * argv[])
         printf("El tamaño del buffer será de %i\n",bufferSize);
     }
 
-    printf("Buffer creado");
+    printf("Buffer creado\n");
     typedef struct {
     int size;
-    int S;
     Memory data[bufferSize];
     } buffer;
 
@@ -104,6 +114,14 @@ int main(int argc, char * argv[])
 	pid_t pid;
     buffer *addr;
 	buffer data;
+    Semaforo *sem_m;
+
+    char *sem_msg = malloc(sizeof(char) * (strlen(bufferName) + 2));
+
+    sprintf(sem_msg, "s_%s", bufferName);
+
+    printf("%s\n",sem_msg);
+
 
     size_t size = sizeof(data);
 
@@ -115,8 +133,6 @@ int main(int argc, char * argv[])
     for(int i = 0; i < 4; i++){
         data.data[i].processID = i;
     }
-    data.S = 1;
-
 	// get shared memory file descriptor (NOT a file)
 	fd = shm_open(bufferName, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
 	if (fd == -1)
@@ -147,11 +163,35 @@ int main(int argc, char * argv[])
 
     addr->size = data.size;
 
-    addr->S = data.S;
-
     for(int i = 0; i < 4; i++){
         addr->data[i].processID = data.data[i].processID;
     }
+
+    fd = shm_open(sem_msg, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+
+	if (fd == -1)
+	{
+		perror("open");
+		return 10;
+	}
+
+	// extend shared memory object as by default it's initialized with size 0
+	res = ftruncate(fd, size);
+	if (res == -1)
+	{
+		perror("ftruncate");
+		return 20;
+	}
+
+	// map shared memory to process address space
+	sem_m = (Semaforo *) mmap(NULL, sizeof(Semaforo), PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
+	if (addr == MAP_FAILED)
+	{
+		perror("mmap");
+		return 30;
+	}
+
+    sem_m->S = 1;
 
 	// wait for someone to read it
 	//sleep(10);

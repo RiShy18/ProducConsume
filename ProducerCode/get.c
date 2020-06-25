@@ -173,6 +173,7 @@ int main(int argc, char *argv[])
         }
         for(int i = 0; i < sem_m->procCount; i++){
             printf("PID: %d\n", sem_m->pids[i]);
+            printf("siguiente Pid: %d \n",sem_m->pids[sem_m->index]);
         }
         printf("Estado del Sem procCount: %d index: %d\n", sem_m->procCount, sem_m->index);
 

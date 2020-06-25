@@ -13,6 +13,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <sys/shm.h>
 #include "struct.h"
 #include "Memtools.h"
 #include <string.h>
@@ -30,6 +31,7 @@
  */
 //--------------------------------Constant Spot---------------------------------------
 #define STORAGE_ID "/SHM_TEST"
+#define GLOBAL_ID "/SHM_GLOBAL"
 #define S_Prefix "s_%s"
 #define DATA "Hello, World! From PID %d"
     //--------------------------------Variable Spot---------------------------------------
@@ -106,6 +108,7 @@ int main(int argc, char * argv[])
     typedef struct {
     int size;
     Memory data[bufferSize];
+    char *name;
     } buffer;
 
     int res;
@@ -115,10 +118,13 @@ int main(int argc, char * argv[])
     buffer *addr;
 	buffer data;
     Semaforo *sem_m;
+    Pack *global;
 
     char *sem_msg = malloc(sizeof(char) * (strlen(bufferName) + 2));
+    char *g_var = malloc(sizeof(char) * (strlen(bufferName) + 4));
 
     sprintf(sem_msg, "s_%s", bufferName);
+    sprintf(g_var, "var_%s", bufferName);
 
     printf("%s\n",sem_msg);
 
@@ -129,6 +135,8 @@ int main(int argc, char * argv[])
 	//sprintf(data, DATA, pid);
 
     data.size = bufferSize;
+    data.name = bufferName;
+    //printf("%s\n",&bufferName); 
 
     for(int i = 0; i < 4; i++){
         data.data[i].processID = i;
@@ -192,7 +200,30 @@ int main(int argc, char * argv[])
 	}
 
     sem_m->S = 1;
+    //printf("Nice");
+    //Set Up Global variables
+    fd = shm_open(g_var, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
 
+	if (fd == -1)
+	{
+		perror("open");
+		return 10;
+	}
+    //printf("Nice");
+    // extend shared memory object as by default it's initialized with size 0
+	res = ftruncate(fd, size);
+	if (res == -1)
+	{
+		perror("ftruncate");
+		return 20;
+	}
+    // map shared memory to process address space
+	global = (Pack *) mmap(NULL, sizeof(Pack), PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
+	if (global == MAP_FAILED)
+	{
+		perror("mmap");
+		return 30;
+	}
 	// wait for someone to read it
 	//sleep(10);
     printf("Done SettingUp\n");

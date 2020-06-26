@@ -10,6 +10,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <pthread.h> 
+#include <math.h>
 
 #define STORAGE_ID "/SHM_TEST"
 #define DATE "%d-%02d-%02d %02d:%02d:%02d"
@@ -19,6 +20,25 @@
 int enter;
 pthread_t thread_id; 
 pthread_t thread_id2;
+
+double U_Random (){
+    double f;
+    f =  rand() % 100 ;
+    return f/100;
+}
+
+int possion ()
+{
+    int Lambda = 5, k = 0;
+    long double p = 1.0;
+    long double l = exp (-Lambda);
+    while (p >= l){
+        double u = U_Random ();
+        p *= u;
+        k ++;
+    }
+    return k-1;
+}
 
 typedef struct { //Struct de cada segmento del buffer
     int inUse;
@@ -36,12 +56,13 @@ void *enterfunc(void *vargp){
 }
 
 void *sleepfunc(void *vargp){
+    int p = possion ();
     clock_t start, end;
     start = clock();
     while(1){
         end = clock();
         int tiempoFinal =((int) (end - start)) / CLOCKS_PER_SEC;
-        if(tiempoFinal >= 7 ){
+        if(tiempoFinal >= p){
             printf("El tiempo final es %d  \n", tiempoFinal);
             return 0;
         }else if(enter == 10){

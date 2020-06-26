@@ -9,10 +9,16 @@
 #include <errno.h>
 #include <time.h>
 #include <stdlib.h>
+#include <pthread.h> 
 
 #define STORAGE_ID "/SHM_TEST"
 #define DATE "%d-%02d-%02d %02d:%02d:%02d"
 
+
+
+int enter;
+pthread_t thread_id; 
+pthread_t thread_id2;
 
 typedef struct { //Struct de cada segmento del buffer
     int inUse;
@@ -22,6 +28,30 @@ typedef struct { //Struct de cada segmento del buffer
     int magicNum;
 } Memory;
 
+void *enterfunc(void *vargp){
+    while(1){
+        enter = getchar();
+        return 0;
+    }
+}
+
+void *sleepfunc(void *vargp){
+    clock_t start, end;
+    start = clock();
+    while(1){
+        end = clock();
+        int tiempoFinal =((int) (end - start)) / CLOCKS_PER_SEC;
+        if(tiempoFinal >= 7 ){
+            printf("El tiempo final es %d  \n", tiempoFinal);
+            return 0;
+        }else if(enter == 10){
+            printf("Se pulsó enter \n");
+            enter = 0;
+            return 0;
+        }
+
+    }
+}
 
 typedef struct {
     int size;
@@ -237,8 +267,11 @@ int main(int argc, char *argv[])
             consInfo.msjConsumidos += 1;
             consInfo.UserTime +=  ((double) (end - start)) / CLOCKS_PER_SEC;
             consInfo.kernelTime += ((double) (end - start)) / CLOCKS_PER_SEC;
-        }
-        sleep(7);
+        } 
+        pthread_create(&thread_id, NULL, enterfunc, NULL);
+        pthread_create(&thread_id2, NULL, sleepfunc, NULL);
+        //pthread_join(thread_id, NULL);
+        pthread_join(thread_id2, NULL);
         consInfo.watingTime += 7;
     }
 }

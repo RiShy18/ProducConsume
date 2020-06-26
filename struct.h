@@ -20,6 +20,8 @@ typedef struct {
     int numCons; //Max de consumidores
     int numProd; //Max de productores
 
+    int numConsAct; //Número de consumidores actual 
+
     int msgInBuff; //Mensajes en Buffer
     int totalMsg; //Total de Mensajes
     int deletedCons; //Consumidores borrados

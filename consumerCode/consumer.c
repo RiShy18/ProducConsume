@@ -95,6 +95,20 @@ typedef struct {
     int pids[];
 } Semaforo;
 
+typedef struct {
+    int numSem; //Número de semáforos
+    int numCons; //Max de consumidores
+    int numProd; //Max de productores
+
+    int numConsAct; //Número de consumidores actual 
+
+    int msgInBuff; //Mensajes en Buffer
+    int totalMsg; //Total de Mensajes
+    int deletedCons; //Consumidores borrados
+
+    int autodestroy; //Flag to terminate all
+} Pack;    //Variables globales
+
 /*double U_Random ()/* generates a 0 ~ Random number between 1{
 double f;
 Srand (unsigned) time (NULL ));
@@ -125,6 +139,7 @@ int main(int argc, char *argv[])
 		return 30;
 	}
 	int fd;
+    int res;
 	buffer data;
 	buffer *addr;
     Info consInfo;
@@ -133,13 +148,15 @@ int main(int argc, char *argv[])
     double kernel;
     char date[50];
     char msg[500];
+    Pack *global;
     
     Semaforo *sem_m;
 
     char *sem_msg = malloc(sizeof(char) * (strlen(argv[1]) + 2));
+    char *g_var = malloc(sizeof(char) * (strlen(argv[1]) + 4));
 
     sprintf(sem_msg, "s_%s", argv[1]); //Nombre del espacio de memoria donde se encontrara el semaforo del buffer
-    
+    sprintf(g_var, "var_%s", argv[1]); //
 
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
@@ -181,15 +198,54 @@ int main(int argc, char *argv[])
 		perror("mmap");
 		return 30;
 	}
+        //printf("Nice");
+    //Set Up Global variables
+    fd = shm_open(g_var, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+    printf("Entrando a variables globales");
+	if (fd == -1)
+	{
+		perror("open");
+		return 10;
+	}
+    //printf("Nice");
+    // extend shared memory object as by default it's initialized with size 0
+	res = ftruncate(fd, size);
+	if (res == -1)
+	{
+		perror("ftruncate");
+		return 20;
+	}
+    // map shared memory to process address space
+	global = (Pack *) mmap(NULL, sizeof(Pack), PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
+	if (global == MAP_FAILED)
+	{
+		perror("mmap");
+		return 30;
+	}
 
     sem_m->procCount +=1;
 
     sem_m->pids[sem_m->procCount - 1] = consInfo.pid;
     int i = 0;
+    printf("Número de consumidores actuales es: %d \n", global->numConsAct);
+    if(global->numCons == 0){
+        printf("Número máximo de consumidores alcanzado");
+        while(1){
+            pthread_create(&thread_id, NULL, enterfunc, NULL);
+            pthread_create(&thread_id2, NULL, sleepfunc, NULL);
+            //pthread_join(thread_id, NULL);
+            pthread_join(thread_id2, NULL);
+            if(global->numCons > 0){
+                printf("Se ha liberado un espacio");
+                break;
+            }
+        }
+    }
+    global->numCons -= 1;
+    printf("Numero de consumidores actuales es: %d \n", global->numConsAct);
 	while(1){
         int succes = 0;
-        printf("Consumer pid: %d \n", consInfo.pid);
-        printf("Semáforo pid: %d \n", sem_m->pids[sem_m->index]);
+        printf("El número de consumidores globales es: %d \n", global->numCons);
         if(sem_m->S == 1 && sem_m->pids[sem_m->index] == consInfo.pid){
             sem_m->S = 0;
 
@@ -246,6 +302,7 @@ int main(int argc, char *argv[])
                         printf("Recolocando procesos \n");
                         sem_m->pids[i] = sem_m->pids[i+1];
                     }
+                    global->numCons += 1;
                     sem_m->index = 1;
                     sem_m->procCount -= 1;
                     printf("EL SIGUIENTE PROCESO EN EJECUTARSE ES: %d  Y EL PROCCOUNT ES %d\n",sem_m->pids[sem_m->index], sem_m->procCount);
@@ -258,18 +315,14 @@ int main(int argc, char *argv[])
                         printf("Disminuyo\n");
                         sem_m->index = 0;
                         if(i < addr->size - 1){
-                        printf("Valor de i: %d \n", i);
                             i += 1;
                         }else{
-                        printf("Valor de i: %d \n", i);
                             i = 0;
                         }
                     }
                     else if(i < addr->size - 1){
-                        printf("Valor de i: %d \n", i);
                         i += 1;
                     }else{
-                        printf("Valor de i: %d \n", i);
                         i = 0;
                     }
                 }
@@ -288,11 +341,17 @@ int main(int argc, char *argv[])
             consInfo.msjConsumidos += 1;
             consInfo.UserTime +=  ((double) (end - start)) / CLOCKS_PER_SEC;
             consInfo.kernelTime += ((double) (end - start)) / CLOCKS_PER_SEC;
-        } 
+        }
+        start = clock(); 
         pthread_create(&thread_id, NULL, enterfunc, NULL);
         pthread_create(&thread_id2, NULL, sleepfunc, NULL);
         //pthread_join(thread_id, NULL);
         pthread_join(thread_id2, NULL);
-        consInfo.watingTime += 7;
+        if(global->autodestroy == 1){
+            //global->numCons = 0;
+            return 0;
+        }
+        end = clock();
+        consInfo.watingTime += ((double) (end - start)) / CLOCKS_PER_SEC;;
     }
 }

@@ -181,6 +181,13 @@ int main(int argc, char *argv[])
 		return 100;
 	}
 
+    fd = shm_unlink(g_var);
+	if (fd == -1)
+	{
+		perror("unlink2");
+		return 100;
+	}
+
     printf("Done Cleaning Up\n");
 
 	return 0;

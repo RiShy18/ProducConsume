@@ -228,6 +228,9 @@ int main(int argc, char * argv[])
 	//sleep(10);
     printf("Done SettingUp\n");
 
+    global->numCons = data.size/2;
+    printf("Numero de consumidores máximo es: %d \n", global->numCons);
+
 
 
 return 0;

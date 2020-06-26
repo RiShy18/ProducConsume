@@ -55,24 +55,6 @@ void *enterfunc(void *vargp){
     }
 }
 
-void *sleepfunc(void *vargp){
-    int p = possion ();
-    clock_t start, end;
-    start = clock();
-    while(1){
-        end = clock();
-        int tiempoFinal =((int) (end - start)) / CLOCKS_PER_SEC;
-        if(tiempoFinal >= p){
-            printf("El tiempo final es %d  \n", tiempoFinal);
-            return 0;
-        }else if(enter == 10){
-            printf("Se pulsó enter \n");
-            enter = 0;
-            return 0;
-        }
-
-    }
-}
 
 typedef struct {
     int size;
@@ -131,6 +113,28 @@ int possion ()/* generates a random number with a Poisson distribution. Lamda is
     }
     return k-1;
 }*/
+Pack *global;
+
+void *sleepfunc(void *vargp){
+    int p = possion ();
+    clock_t start, end;
+    start = clock();
+    while(1){
+        end = clock();
+        int tiempoFinal =((int) (end - start)) / CLOCKS_PER_SEC;
+        if(tiempoFinal >= p){
+            printf("El tiempo final es %d  \n", tiempoFinal);
+            return 0;
+        }else if(enter == 10){
+            printf("Se pulsó enter \n");
+            enter = 0;
+            return 0;
+        }else if(global->autodestroy == 1){
+            return 0;
+        }
+
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -148,7 +152,6 @@ int main(int argc, char *argv[])
     double kernel;
     char date[50];
     char msg[500];
-    Pack *global;
     
     Semaforo *sem_m;
 

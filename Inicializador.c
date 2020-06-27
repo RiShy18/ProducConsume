@@ -118,13 +118,17 @@ int main(int argc, char * argv[])
     buffer *addr;
 	buffer data;
     Semaforo *sem_m;
+    Semaforo *sem_glob;
     Pack *global;
 
     char *sem_msg = malloc(sizeof(char) * (strlen(bufferName) + 2));
     char *g_var = malloc(sizeof(char) * (strlen(bufferName) + 4));
+    char *sg_msg = malloc(sizeof(char) * (strlen(bufferName) + 3));
+
 
     sprintf(sem_msg, "s_%s", bufferName);
     sprintf(g_var, "var_%s", bufferName);
+    sprintf(sg_msg, "sg_%s", bufferName);
 
     printf("%s\n",sem_msg);
 
@@ -184,7 +188,7 @@ int main(int argc, char * argv[])
 	}
 
 	// extend shared memory object as by default it's initialized with size 0
-	res = ftruncate(fd, size);
+	res = ftruncate(fd, sizeof(Semaforo));
 	if (res == -1)
 	{
 		perror("ftruncate");
@@ -200,6 +204,33 @@ int main(int argc, char * argv[])
 	}
 
     sem_m->S = 1;
+
+    fd = shm_open(sg_msg, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+
+	if (fd == -1)
+	{
+		perror("open");
+		return 10;
+	}
+
+	// extend shared memory object as by default it's initialized with size 0
+	res = ftruncate(fd, sizeof(Semaforo));
+	if (res == -1)
+	{
+		perror("ftruncate");
+		return 20;
+	}
+
+	// map shared memory to process address space
+	sem_glob = (Semaforo *) mmap(NULL, sizeof(Semaforo), PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
+	if (addr == MAP_FAILED)
+	{
+		perror("mmap");
+		return 30;
+	}
+
+    sem_glob->S = 1;
+
     //printf("Nice");
     //Set Up Global variables
     fd = shm_open(g_var, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
@@ -211,7 +242,7 @@ int main(int argc, char * argv[])
 	}
     //printf("Nice");
     // extend shared memory object as by default it's initialized with size 0
-	res = ftruncate(fd, size);
+	res = ftruncate(fd, sizeof(Pack));
 	if (res == -1)
 	{
 		perror("ftruncate");
@@ -230,8 +261,9 @@ int main(int argc, char * argv[])
 
     global->numCons = data.size/2;
     printf("Numero de consumidores máximo es: %d \n", global->numCons);
+	global->numProd = data.size/2;
 
-
+	global->autodestroy = 0;
 
 return 0;
 }

@@ -9,6 +9,8 @@
 #include <errno.h>
 #include <time.h>
 #include <stdlib.h>
+#include <math.h>
+#include "../struct.h"
 
 #define STORAGE_ID "/SHM_TEST"
 //#define DATA "PID: %d"
@@ -22,19 +24,6 @@ struct buffer
     int S;
 };*/
 
-typedef struct { //Struct de cada segmento del buffer
-    int inUse;
-    int processID;
-    char msg[10];
-    char date[50];
-    int magicNum;
-} Memory;
-
-
-typedef struct {
-    int size;
-    Memory data[];
-} buffer;
 
 typedef struct{
     int msjProducidos;
@@ -51,15 +40,24 @@ typedef struct {
     int pids[];
 } Semaforo;
 
+double ran_expo(double lambda){
+    double u;
+    u = rand() / (RAND_MAX + 1.0);
+    return -log(1- u) / lambda;
+}
+
 
 
 
 int main(int argc, char *argv[])
 {
-    if(argc < 2){ //Verificar que se hallan introducido los parametros necesarios.
+    if(argc < 3){ //Verificar que se hallan introducido los parametros necesarios.
 		printf("Missing arguments, please provide buffer name\n");
 		return 30;
 	}
+    srand((unsigned)time(NULL));
+    double sleep_time = ran_expo(atof(argv[2]));
+
 	int fd;
 	buffer data;
 	buffer *addr;
@@ -71,11 +69,21 @@ int main(int argc, char *argv[])
     char msg[10];
 
     Semaforo *sem_m;
+    Semaforo *sem_glob;
+
+    Pack *globals;
 
 	char *sem_msg = malloc(sizeof(char) * (strlen(argv[1]) + 2));
+    char *var_msg = malloc(sizeof(char) * (strlen(argv[1]) + 4));
+    char *sg_msg = malloc(sizeof(char) * (strlen(argv[1]) + 3));
+
+    int done_startup = 0;
+
 
     sprintf(sem_msg, "s_%s", argv[1]); //Nombre del espacio de memoria donde se encontrara el semaforo del buffer
-    
+    sprintf(var_msg, "var_%s", argv[1]);
+    sprintf(sg_msg, "sg_%s", argv[1]);
+
 
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
@@ -115,7 +123,7 @@ int main(int argc, char *argv[])
 
 	// map shared memory to process address space
 	sem_m = (Semaforo *) mmap(NULL, sizeof(Semaforo), PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
-	if (addr == MAP_FAILED)
+	if (sem_m == MAP_FAILED)
 	{
 		perror("mmap");
 		return 30;
@@ -128,6 +136,55 @@ int main(int argc, char *argv[])
     /*------------ Inserta el PID en la cola del semaforo---------------------*/
 
     sem_m->pids[sem_m->procCount - 1] = procInfo.pid;
+
+    /*------------------------ Carga el espacio de las globales en el buffer-----------------------------*/
+    fd = shm_open(var_msg, O_RDWR, S_IRUSR | S_IWUSR);
+	if (fd == -1)
+	{
+		perror("open");
+		return 10;
+	}
+
+	// map shared memory to process address space
+	globals = (Pack *) mmap(NULL, size, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
+	if (globals == MAP_FAILED)
+	{
+		perror("mmap");
+		return 30;
+	}
+
+    /*------------------------ Carga el espacio del semaforo buffer-----------------------------*/
+
+    fd = shm_open(sg_msg, O_RDWR, S_IRUSR | S_IWUSR);
+	if (fd == -1)
+	{
+		perror("open");
+		return 10;
+	}
+
+	// map shared memory to process address space
+	sem_glob = (Semaforo *) mmap(NULL, sizeof(Semaforo), PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
+	if (sem_m == MAP_FAILED)
+	{
+		perror("mmap");
+		return 30;
+	}
+
+    /*------------ Aumenta la cantidad de procesos en la cola del semaforo---------------------*/
+
+    sem_glob->procCount +=1;
+
+    /*------------ Inserta el PID en la cola del semaforo---------------------*/
+
+    sem_glob->pids[sem_glob->procCount - 1] = procInfo.pid;
+
+    if(globals->numProd >= globals->numProdAct){
+        globals->numProdAct += 1;
+    }else{
+        printf("No mas prod\n");
+    }
+
+    printf("sleep_time %f", sleep_time);
 
 	while(1){
         int succes = 0;
@@ -151,33 +208,39 @@ int main(int argc, char *argv[])
                     printf("PID %d: introdujo mensaje en indice: %d\n", procInfo.pid, i);
                     procInfo.msjProducidos +=1;
                     succes = 1;
+                    globals->totalMsg +=1;
+                    globals->msgInBuff +=1;
                     break;
                 }else{
                     //printf("MSG: %s\n", addr->data[i].date);
                 }
             }
-            if(succes == 0){
-                printf("Buffer Lleno\n");
-            }
 
             sem_m->index += 1; //Marca para que el indice de la cola aumente en 1 y el proximo en acceder al semaforo siga el orden
-            printf("Aumento\n");
             if(sem_m->index >= sem_m->procCount){//En caso de que al aumentar el indice se salga de la cantidad de procesos en cola
-                printf("Disminuyo\n");
                 sem_m->index = 0;
             }
 
             sem_m->S = 1; //Up del semaforo
             end = clock();
             procInfo.kernelTime += ((double) (end - start)) / CLOCKS_PER_SEC;
-        }
+        }/*
         for(int i = 0; i < sem_m->procCount; i++){
             printf("PID: %d\n", sem_m->pids[i]);
             printf("siguiente Pid: %d \n",sem_m->pids[sem_m->index]);
         }
         printf("Estado del Sem procCount: %d index: %d\n", sem_m->procCount, sem_m->index);
-
-        sleep(7);
+*/
+        if(sem_glob->S == 1){
+            sem_glob->S == 0;
+            if(globals->autodestroy == 1){
+                 globals->numProdAct -=1;
+                printf("PID: %d Mensajes producidos: %d, Tiempo de Esperado: %f, Tiempo bloqueado por Semaforos: %f, Tiempo en kernel: %f\n", procInfo.pid, procInfo.msjProducidos, procInfo.watingTime, procInfo.waitingSTime, procInfo.kernelTime);
+                return 0;
+            }
+            sem_glob->S = 1;
+        }
+        sleep(sleep_time);
     }
 	return 0;
 }

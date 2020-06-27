@@ -12,7 +12,7 @@ typedef struct { //Struct de cada segmento del buffer
 
 typedef struct {
     int size;
-    Memory data[5];
+    Memory data[];
 } buffer;
 
 typedef struct {
@@ -20,7 +20,8 @@ typedef struct {
     int numCons; //Max de consumidores
     int numProd; //Max de productores
 
-    int numConsAct; //Número de consumidores actual 
+    int numConsAct; //Número de consumidores actual
+    int numProdAct;
 
     int msgInBuff; //Mensajes en Buffer
     int totalMsg; //Total de Mensajes

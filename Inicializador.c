@@ -18,7 +18,7 @@
 #include "Memtools.h"
 #include <string.h>
 #include <stdlib.h>
-//#include “module.h”
+#include "printc.h"
 /*----------------------------------End of Include Spot------------------ */
 
 /*!
@@ -276,3 +276,11 @@ return 0;
 
 
 /*** end of file ***/
+/*
+;
+; 		_
+;	.__(.)<  (CUACK)
+;	\____)
+; ____________________________
+;
+*/

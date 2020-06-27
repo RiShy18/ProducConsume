@@ -23,6 +23,9 @@ typedef struct {
     int numConsAct; //Número de consumidores actual
     int numProdAct;
 
+    int consTotal;
+    int prodTotal;
+
     int msgInBuff; //Mensajes en Buffer
     int totalMsg; //Total de Mensajes
     int deletedCons; //Consumidores borrados

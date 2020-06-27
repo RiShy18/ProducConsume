@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <time.h>
 #include <stdlib.h>
+#include "printc.h"
 
 #define STORAGE_ID "/SHM_TEST"
 #define DATE "%d-%02d-%02d %02d:%02d:%02d"
@@ -50,6 +51,10 @@ typedef struct {
     int numProd; //Max de productores
 
     int numConsAct; //Número de consumidores actual 
+    int numProdAct;
+
+    int consTotal;
+    int prodTotal;
 
     int msgInBuff; //Mensajes en Buffer
     int totalMsg; //Total de Mensajes
@@ -109,6 +114,7 @@ int main(int argc, char *argv[])
 
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
+    
 
 	consInfo.pid = getpid();
     consInfo.kernelTime = 0;
@@ -189,6 +195,35 @@ int main(int argc, char *argv[])
 	}
 
     printf("Done Cleaning Up\n");
+
+    printc("<I> Activity Summary: \n\n",4);
+
+    printc("\t- Mensajes Totales: ",4);
+    printf("%d\n", global->totalMsg);
+
+    printc("\t- Mensajes en el buffer: ",6);
+    printf("%d\n", global->msgInBuff);
+
+    printc("\t- Total de Productores: ",6); //Si tienen otra variable que los cuente lo cambian v:
+    printf("%d\n", global->prodTotal);
+
+    printc("\t- Total de Consumidores: ",6); //Si tienen otra variable que los cuente lo cambian v:
+    printf("%d\n", global->consTotal);
+
+    printc("\t- Consumidores eliminados por llave: ",6);
+    printf("%d\n", global->deletedCons);
+
+    printc("\t- Tiempo esperado total: ",6);
+    printf("%.2f minutos\n", consInfo.watingTime);
+
+    //printc("\t- Tiempo bloqueado total: ",6);
+    //printf("%.2f minutos\n", Variables[0].totalBloq/60);
+
+    printc("\t- Tiempo usuario total: ",6);
+    printf("%.2f minutos\n", consInfo.UserTime);
+
+    printc("\t- Tiempo kernel total: ",6);
+    printf("%.2f minutos\n", consInfo.kernelTime);
 
 	return 0;
 }

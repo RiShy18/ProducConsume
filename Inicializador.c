@@ -96,12 +96,18 @@ int main(int argc, char * argv[])
 
 
     //Ingreso el tamaño
-    printf("Ingrese el tamaño del buffer de memoria: ");
+    printf("Ingrese el tamaño del buffer de memoria (max 47): ");
+
     if(scanf("%i", &bufferSize) !=1){
         printf("Número inválido\n");
     }
     else{
+		if(bufferSize > 47){
+			bufferSize = 47;
         printf("El tamaño del buffer será de %i\n",bufferSize);
+		}else{
+        	printf("El tamaño del buffer será de %i\n",bufferSize);
+		}
     }
 
     printf("Buffer creado\n");

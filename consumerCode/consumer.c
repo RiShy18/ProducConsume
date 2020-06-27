@@ -20,20 +20,21 @@
 int enter;
 pthread_t thread_id; 
 pthread_t thread_id2;
+double media;
 
-double U_Random (){
+double U_Random (int random){
     double f;
     f =  rand() % 100 ;
-    return f/100;
+    return f/(100 * random);
 }
 
-int possion ()
+int possion (int random)
 {
     int Lambda = 5, k = 0;
     long double p = 1.0;
     long double l = exp (-Lambda);
     while (p >= l){
-        double u = U_Random ();
+        double u = U_Random (random);
         p *= u;
         k ++;
     }
@@ -83,6 +84,7 @@ typedef struct {
     int numProd; //Max de productores
 
     int numConsAct; //Número de consumidores actual 
+    int numProdAct;
 
     int msgInBuff; //Mensajes en Buffer
     int totalMsg; //Total de Mensajes
@@ -116,7 +118,7 @@ int possion ()/* generates a random number with a Poisson distribution. Lamda is
 Pack *global;
 
 void *sleepfunc(void *vargp){
-    int p = possion ();
+    int p = possion(media);
     clock_t start, end;
     start = clock();
     while(1){
@@ -152,6 +154,8 @@ int main(int argc, char *argv[])
     double kernel;
     char date[50];
     char msg[500];
+    media = atof(argv[2]);
+    int modo = atof(argv[3]); 
     
     Semaforo *sem_m;
 
@@ -245,6 +249,7 @@ int main(int argc, char *argv[])
         }
     }
     global->numCons -= 1;
+    global->numConsAct += 1;
     printf("Numero de consumidores actuales es: %d \n", global->numConsAct);
 	while(1){
         int succes = 0;
@@ -258,10 +263,22 @@ int main(int argc, char *argv[])
             printf("BufferSize: %d\n", data.size);
             printf("En uso: %d \n",addr->data[0].inUse);
             if(addr->data[i].inUse != 0){
-                printf("Hay mensajes \n");
-                printf("Numero mágico: %d \n", addr->data[i].magicNum);
-                printf("Modulo 6 de pid: %d \n", (consInfo.pid % 6));
-
+                sprintf(msg,"El indice del mensaje actual es: %d \n", i);
+                printf("\033[1;32m");
+                printf("%s",msg);
+                printf("\033[0m");
+                sprintf(msg,"El número de consumidores actuales es: %d \n",global->numConsAct);
+                printf("\033[1;32m");
+                printf("%s",msg);
+                printf("\033[0m");
+                sprintf(msg,"El número de productores actuales es: %d \n", global->numProdAct);
+                printf("\033[1;32m");
+                printf("%s",msg);
+                printf("\033[0m");                
+                sprintf(msg,"El mensaje leído dice: %s \n", addr->data[i].msg);
+                printf("\033[1;32m");
+                printf("%s",msg);
+                printf("\033[0m");
                 consInfo.msjConsumidos += 1;
                 if((addr->data[i].magicNum) == (consInfo.pid % 6)){
                     printf("Entra al if final");
@@ -306,9 +323,9 @@ int main(int argc, char *argv[])
                         sem_m->pids[i] = sem_m->pids[i+1];
                     }
                     global->numCons += 1;
+                    global->numConsAct -= 1;
                     sem_m->index = 1;
                     sem_m->procCount -= 1;
-                    printf("EL SIGUIENTE PROCESO EN EJECUTARSE ES: %d  Y EL PROCCOUNT ES %d\n",sem_m->pids[sem_m->index], sem_m->procCount);
                     sem_m->S = 1;
                     return 0;
                 }else{
@@ -332,7 +349,7 @@ int main(int argc, char *argv[])
                 
             }else{
                 sem_m->index += 1;
-                printf("MSG: %s\n", addr->data[0].msg);
+                printf("MSG: No hay mensajes disponibles\n");
                 if(sem_m->index >= sem_m->procCount){//En caso de que al aumentar el indice se salga de la cantidad de procesos en cola
                     printf("Disminuyo\n");
                     sem_m->index = 0;
@@ -346,10 +363,15 @@ int main(int argc, char *argv[])
             consInfo.kernelTime += ((double) (end - start)) / CLOCKS_PER_SEC;
         }
         start = clock(); 
-        pthread_create(&thread_id, NULL, enterfunc, NULL);
-        pthread_create(&thread_id2, NULL, sleepfunc, NULL);
+        if(modo == 0){
+            pthread_create(&thread_id, NULL, enterfunc, NULL);
+            pthread_join(thread_id, NULL);
+        }
+        if(modo == 1){   
+            pthread_create(&thread_id2, NULL, sleepfunc, NULL);
+            pthread_join(thread_id2, NULL);
+        }
         //pthread_join(thread_id, NULL);
-        pthread_join(thread_id2, NULL);
         if(global->autodestroy == 1){
             //global->numCons = 0;
             return 0;

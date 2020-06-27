@@ -33,6 +33,9 @@ typedef struct {
     int numConsAct; //Número de consumidores actual
     int numProdAct;
 
+	int consTotal;
+    int prodTotal;
+
     int msgInBuff; //Mensajes en Buffer
     int totalMsg; //Total de Mensajes
     int deletedCons; //Consumidores borrados
@@ -220,6 +223,43 @@ int main(int argc, char *argv[])
 
     printf("Done Cleaning Up\n");
 
+	printc("<I> Activity Summary: \n\n",4);
+
+    printc("\t- Mensajes Totales: ",4);
+    printf("%d\n", global_vars->totalMsg);
+
+    printc("\t- Mensajes en el buffer: ",6);
+    printf("%d\n", global_vars->msgInBuff);
+
+    printc("\t- Total de Productores: ",6); //Si tienen otra variable que los cuente lo cambian v:
+    printf("%d\n", global_vars->prodTotal);
+
+    printc("\t- Total de Consumidores: ",6); //Si tienen otra variable que los cuente lo cambian v:
+    printf("%d\n", global_vars->consTotal);
+
+    printc("\t- Consumidores eliminados por llave: ",6);
+    printf("%d\n", global_vars->deletedCons);
+/*
+    printc("\t- Tiempo esperado total: ",6);        //Mae chizco muerdase con los tiempos v:
+    printf("%.2f minutos\n", consInfo.watingTime);
+
+    //printc("\t- Tiempo bloqueado total: ",6);
+    //printf("%.2f minutos\n", Variables[0].totalBloq/60);
+
+    printc("\t- Tiempo usuario total: ",6);
+    printf("%.2f minutos\n", consInfo.UserTime);
+
+    printc("\t- Tiempo kernel total: ",6);
+    printf("%.2f minutos\n", consInfo.kernelTime);
+*/
 	return 0;
 
 }
+/*
+;
+; 		_
+;	.__(.)<  (CUACK)
+;	\____)
+; ____________________________
+;
+*/

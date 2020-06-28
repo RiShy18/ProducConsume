@@ -12,6 +12,7 @@
 #include <pthread.h> 
 #include <math.h>
 #include "../include/printc.h"
+#include "../include/struct.h"
 
 #define STORAGE_ID "/SHM_TEST"
 #define DATE "%d-%02d-%02d %02d:%02d:%02d"
@@ -44,13 +45,6 @@ int possion (int random){
 }
 
 
-typedef struct { //Struct de cada segmento del buffer
-    int inUse;
-    int processID;
-    char msg[10];
-    char date[50];
-    int magicNum;
-} Memory;
 
 
 //Función que espera a que se precione enter
@@ -61,12 +55,6 @@ void *enterfunc(void *vargp){
     }
 }
 
-
-typedef struct {
-    int size;
-    int S;
-    Memory data[];
-} buffer;
 
 typedef struct{ //Estructura de la información propia del consumidor
     int msjConsumidos;
@@ -82,27 +70,6 @@ typedef struct {
     int index;
     int pids[];
 } Semaforo;
-
-typedef struct {
-    int numSem; //Número de semáforos
-    int numCons; //Max de consumidores
-    int numProd; //Max de productores
-
-    int numConsAct; //Número de consumidores actual
-    int numProdAct;
-
-    int msgInBuff; //Mensajes en Buffer
-    int totalMsg; //Total de Mensajes
-    int deletedCons; //Consumidores borrados
-    int prodTotal;
-    int consTotal;
-    double waitingTot;
-    double bloquedTot;
-    double totUsrTime;
-    double totKernTime;
-
-    int autodestroy; //Flag to terminate all
-} Pack;    //Variables globales
 
 Pack *global;
 
@@ -259,9 +226,11 @@ int main(int argc, char *argv[])
                 if((addr->data[i].magicNum) == (consInfo.pid % 6)){
                     //Borra el mensaje
                     addr->data[i].inUse = 0;
-                    /*for(int w = i; i<=addr->size;i++){
+                    for(int w = i; i<=addr->size;i++){
+                        Memory mensaje = addr->data[w];
                         addr->data[w] = addr->data[w+1];
-                    }*/
+                        addr->data[w+1] = mensaje;
+                    }
                     end = clock();
                     consInfo.UserTime +=  ((double) (end - start)) / CLOCKS_PER_SEC;
                     //disminuir número de consumidores vivos

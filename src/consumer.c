@@ -259,9 +259,9 @@ int main(int argc, char *argv[])
                 if((addr->data[i].magicNum) == (consInfo.pid % 6)){
                     //Borra el mensaje
                     addr->data[i].inUse = 0;
-                    for(int w = i; i<=addr->size;i++){
+                    /*for(int w = i; i<=addr->size;i++){
                         addr->data[w] = addr->data[w+1];
-                    }
+                    }*/
                     end = clock();
                     consInfo.UserTime +=  ((double) (end - start)) / CLOCKS_PER_SEC;
                     //disminuir número de consumidores vivos
@@ -323,7 +323,7 @@ int main(int argc, char *argv[])
             }else{
                 sem_m->index += 1;
                 printf("MSG: No hay mensajes disponibles\n");
-                i = 0;
+                //i = 0;
                 if(sem_m->index >= sem_m->procCount){//En caso de que al aumentar el indice se salga de la cantidad de procesos en cola
                     printf("Disminuyo\n");
                     sem_m->index = 0;

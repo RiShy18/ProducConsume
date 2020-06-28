@@ -221,6 +221,7 @@ int main(int argc, char *argv[])
                     //memcpy(addr->data[i].date, date, strlen(date) + 1);
                     addr->data[i].inUse = 1;
                     //printf("PID %d: introdujo mensaje en indice: %d\n", procInfo.pid, i);
+                    printf("Mensaje: %s \n",addr->data[i].msg);
                     sprintf(suc_msg, "PID %d: introdujo mensaje en indice: %d\n", procInfo.pid, i);
                     printc(suc_msg, 3);
                     procInfo.msjProducidos +=1;

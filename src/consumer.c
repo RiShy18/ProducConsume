@@ -115,7 +115,6 @@ void *sleepfunc(void *vargp){
         end = clock();
         int tiempoFinal =((int) (end - start)) / CLOCKS_PER_SEC;
         if(tiempoFinal >= p){
-            printf("El tiempo final es %d  \n", tiempoFinal);
             return 0;
         }else if(global->autodestroy == 1){
             return 0;
@@ -193,7 +192,6 @@ int main(int argc, char *argv[])
 	}
     //Set Up Global variables
     fd = shm_open(g_var, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
-    printf("Entrando a variables globales");
 	if (fd == -1)
 	{
 		perror("open");
@@ -237,6 +235,8 @@ int main(int argc, char *argv[])
             start = clock();
             data.size = addr->size;
             //Verifica que existan mensajes
+            printf("índice del mensaje: %d \n",i);
+            printf("El mensaje es: %d \n",addr->data[i].processID);
             if(addr->data[i].inUse != 0){
                 sprintf(msg,"El indice del mensaje actual es: %d \n", i);
                 printf("\033[1;32m");
@@ -257,12 +257,13 @@ int main(int argc, char *argv[])
                 consInfo.msjConsumidos += 1;
                 //Verifica si el número mágicod el mensaje es igual al pid módulo 6
                 if((addr->data[i].magicNum) == (consInfo.pid % 6)){
-                    printf("Entra al if final");
                     //Borra el mensaje
                     addr->data[i].inUse = 0;
+                    for(int w = i; i<=addr->size;i++){
+                        addr->data[w] = addr->data[w+1];
+                    }
                     end = clock();
                     consInfo.UserTime +=  ((double) (end - start)) / CLOCKS_PER_SEC;
-                    consInfo.msjConsumidos += 1;
                     //disminuir número de consumidores vivos
                     sprintf(msg,"El consumidor número de proceso: %d ha terminado \n", consInfo.pid);
                     printf("\033[1;31m");
@@ -327,6 +328,7 @@ int main(int argc, char *argv[])
             }else{
                 sem_m->index += 1;
                 printf("MSG: No hay mensajes disponibles\n");
+                i = 0;
                 if(sem_m->index >= sem_m->procCount){//En caso de que al aumentar el indice se salga de la cantidad de procesos en cola
                     printf("Disminuyo\n");
                     sem_m->index = 0;
@@ -358,7 +360,7 @@ int main(int argc, char *argv[])
             global->totKernTime += consInfo.UserTime;
             global->waitingTot += consInfo.watingTime;
             global->totUsrTime += consInfo.UserTime;
-            sprintf(msg, "PID: %d Mensajes producidos: %d, Tiempo de Esperado: %f, Tiempo en kernel: %f\n", consInfo.pid, consInfo.msjConsumidos, consInfo.watingTime, consInfo.UserTime);
+            sprintf(msg, "PID: %d Mensajes Leídos: %d, Tiempo de Esperado: %f, Tiempo en kernel: %f\n", consInfo.pid, consInfo.msjConsumidos, consInfo.watingTime, consInfo.UserTime);
             printc(msg, 1);
             return 0;
         }

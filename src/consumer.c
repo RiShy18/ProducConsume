@@ -190,6 +190,9 @@ int main(int argc, char *argv[])
             }
         }
     }
+    if(modo > 1){
+        modo = 1;
+    }
     sem_m->procCount +=1;
     sem_m->pids[sem_m->procCount - 1] = consInfo.pid;
     global->numCons -= 1;

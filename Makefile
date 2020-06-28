@@ -16,4 +16,4 @@ producer: libprintc
 		gcc -o excecutables/producer src/producer.c lib/libprintc.a -lrt -lm
 
 consumer: producer
-		gcc -o excecutables/consumer src/consumer.c -lpthread -lrt -lm
+		gcc -o excecutables/consumer src/consumer.c lib/libprintc.a -lpthread -lrt -lm

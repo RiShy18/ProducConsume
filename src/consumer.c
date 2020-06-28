@@ -17,20 +17,21 @@
 #define DATE "%d-%02d-%02d %02d:%02d:%02d"
 
 
-
+//Variables globales del consumidor
 int enter;
 pthread_t thread_id; 
 pthread_t thread_id2;
 double media;
 
+//Función que obtiene un número random
 double U_Random (int random){
     double ran;
     ran =  rand() % 100 ;
     return ran/(100 * random);
 }
 
-int possion (int random)
-{
+//Función que obtiene el valor aleatorio de poisson
+int possion (int random){
     int lambda = 5, d= 0;
     long double o = 1.0;
     long double w = exp (-lambda);
@@ -42,6 +43,7 @@ int possion (int random)
     return d-1;
 }
 
+
 typedef struct { //Struct de cada segmento del buffer
     int inUse;
     int processID;
@@ -50,6 +52,8 @@ typedef struct { //Struct de cada segmento del buffer
     int magicNum;
 } Memory;
 
+
+//Función que espera a que se precione enter
 void *enterfunc(void *vargp){
     while(1){
         enter = getchar();
@@ -64,7 +68,7 @@ typedef struct {
     Memory data[];
 } buffer;
 
-typedef struct{
+typedef struct{ //Estructura de la información propia del consumidor
     int msjConsumidos;
     double watingTime;
     double UserTime;
@@ -102,6 +106,7 @@ typedef struct {
 
 Pack *global;
 
+//Función que espera a que pase cierto tiempo
 void *sleepfunc(void *vargp){
     int p = possion(media);
     clock_t start, end;
@@ -112,21 +117,17 @@ void *sleepfunc(void *vargp){
         if(tiempoFinal >= p){
             printf("El tiempo final es %d  \n", tiempoFinal);
             return 0;
-        }else if(enter == 10){
-            printf("Se pulsó enter \n");
-            enter = 0;
-            return 0;
         }else if(global->autodestroy == 1){
             return 0;
         }
 
     }
 }
-
+//Main principal
 int main(int argc, char *argv[])
 {
-    if(argc < 2){
-		printf("Missing arguments, please provide buffer name\n");
+    if(argc < 4){
+		printf("Missing arguments, please provide buffer name, media time, mode(0 enter mode, 1 poisson mode)\n");
 		return 30;
 	}
 	int fd;
@@ -148,7 +149,7 @@ int main(int argc, char *argv[])
     char *g_var = malloc(sizeof(char) * (strlen(argv[1]) + 4));
 
     sprintf(sem_msg, "s_%s", argv[1]); //Nombre del espacio de memoria donde se encontrara el semaforo del buffer
-    sprintf(g_var, "var_%s", argv[1]); //
+    sprintf(g_var, "var_%s", argv[1]); //Nombre del espacio de memoria donde se encontrara las variables globales 
 
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
@@ -190,7 +191,6 @@ int main(int argc, char *argv[])
 		perror("mmap");
 		return 30;
 	}
-        //printf("Nice");
     //Set Up Global variables
     fd = shm_open(g_var, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
     printf("Entrando a variables globales");
@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
 
     sem_m->pids[sem_m->procCount - 1] = consInfo.pid;
     int i = 0;
-    printf("Número de consumidores actuales es: %d \n", global->numConsAct);
+    //Verifica si no hay espacio en el buffer para consumidores
     if(global->numCons == 0){
         printf("Número máximo de consumidores alcanzado");
         while(1){
@@ -227,10 +227,9 @@ int main(int argc, char *argv[])
     }
     global->numCons -= 1;
     global->numConsAct += 1;
-    printf("Numero de consumidores actuales es: %d \n", global->numConsAct);
 	while(1){
         int succes = 0;
-        printf("El número de consumidores globales es: %d \n", global->numCons);
+        //Verifica que el semáforo esté liberado y que sea el siguiente proceso en lista
         if(sem_m->S == 1 && sem_m->pids[sem_m->index] == consInfo.pid){
             sem_m->S = 0;
 
@@ -239,6 +238,7 @@ int main(int argc, char *argv[])
 	        printf("PID %d: Read from shared memory\n", consInfo.pid);
             printf("BufferSize: %d\n", data.size);
             printf("En uso: %d \n",addr->data[0].inUse);
+            //Verifica que existan mensajes
             if(addr->data[i].inUse != 0){
                 sprintf(msg,"El indice del mensaje actual es: %d \n", i);
                 printf("\033[1;32m");
@@ -257,8 +257,10 @@ int main(int argc, char *argv[])
                 printf("%s",msg);
                 printf("\033[0m");
                 consInfo.msjConsumidos += 1;
+                //Verifica si el número mágicod el mensaje es igual al pid módulo 6
                 if((addr->data[i].magicNum) == (consInfo.pid % 6)){
                     printf("Entra al if final");
+                    //Borra el mensaje
                     for(int w = i; w < (addr->size - 1); w++){
                         addr->data[w] = addr->data[w+1];
                     }
@@ -295,6 +297,7 @@ int main(int argc, char *argv[])
                     printf("\033[1;32m");
                     printf("%s",msg);
                     printf("\033[0m");
+                    //Recoloca los procesos y termina
                     for(int i = sem_m->index; i < sem_m->procCount; i++){
                         printf("Recolocando procesos \n");
                         sem_m->pids[i] = sem_m->pids[i+1];
@@ -308,6 +311,7 @@ int main(int argc, char *argv[])
                 }else{
                   sem_m->index += 1;
                     sem_m->S = 1;
+                    //Verifica si es el último proceso en lista y vuelve al primero
                     if(sem_m->index >= sem_m->procCount){//En caso de que al aumentar el indice se salga de la cantidad de procesos en cola
                         printf("Disminuyo\n");
                         sem_m->index = 0;
@@ -340,17 +344,18 @@ int main(int argc, char *argv[])
             consInfo.kernelTime += ((double) (end - start)) / CLOCKS_PER_SEC;
         }
         start = clock(); 
+        //Verica si está en modo enter
         if(modo == 0){
             pthread_create(&thread_id, NULL, enterfunc, NULL);
             pthread_join(thread_id, NULL);
         }
+        //Verifica si está en modo espera con tiempo igua al número de poisson
         if(modo == 1){   
             pthread_create(&thread_id2, NULL, sleepfunc, NULL);
             pthread_join(thread_id2, NULL);
         }
-        //pthread_join(thread_id, NULL);
+        //Verifica la bandera autodestroy
         if(global->autodestroy == 1){
-            //global->numCons = 0;
             global->numConsAct -= 1;
                 global->totKernTime += consInfo.UserTime;
                 global->waitingTot += consInfo.watingTime;

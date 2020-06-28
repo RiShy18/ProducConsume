@@ -312,13 +312,8 @@ int main(int argc, char *argv[])
                     if(sem_m->index >= sem_m->procCount){//En caso de que al aumentar el indice se salga de la cantidad de procesos en cola
                         printf("Disminuyo\n");
                         sem_m->index = 0;
-                        if(i < addr->size - 1){
-                            i += 1;
-                        }else{
-                            i = 0;
-                        }
                     }
-                    else if(i < addr->size - 1){
+                    if(i < addr->size - 1){
                         i += 1;
                     }else{
                         i = 0;
@@ -332,6 +327,11 @@ int main(int argc, char *argv[])
                 if(sem_m->index >= sem_m->procCount){//En caso de que al aumentar el indice se salga de la cantidad de procesos en cola
                     printf("Disminuyo\n");
                     sem_m->index = 0;
+                }
+                if(i < addr->size - 1){
+                    i += 1;
+                }else{
+                    i = 0;
                 }
             }
 

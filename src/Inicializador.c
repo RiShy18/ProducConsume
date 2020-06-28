@@ -14,11 +14,11 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/shm.h>
-#include "struct.h"
-#include "Memtools.h"
+#include "../include/struct.h"
+#include "../include/Memtools.h"
 #include <string.h>
 #include <stdlib.h>
-#include "printc.h"
+//#include “module.h”
 /*----------------------------------End of Include Spot------------------ */
 
 /*!
@@ -114,7 +114,6 @@ int main(int argc, char * argv[])
     typedef struct {
     int size;
     Memory data[bufferSize];
-    char *name;
     } buffer;
 
     int res;
@@ -145,7 +144,6 @@ int main(int argc, char * argv[])
 	//sprintf(data, DATA, pid);
 
     data.size = bufferSize;
-    data.name = bufferName;
     //printf("%s\n",&bufferName); 
 
     for(int i = 0; i < 4; i++){
@@ -268,7 +266,12 @@ int main(int argc, char * argv[])
     global->numCons = data.size/2;
     printf("Numero de consumidores máximo es: %d \n", global->numCons);
 	global->numProd = data.size/2;
-
+	global->deletedCons = 0;
+	global->msgInBuff = 0;
+	global->numConsAct = 0;
+	global->numProdAct = 0;
+	global->numSem = 2;
+	global->totalMsg = 0;
 	global->autodestroy = 0;
 
 return 0;
@@ -276,11 +279,3 @@ return 0;
 
 
 /*** end of file ***/
-/*
-;
-; 		_
-;	.__(.)<  (CUACK)
-;	\____)
-; ____________________________
-;
-*/

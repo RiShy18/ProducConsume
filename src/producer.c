@@ -10,7 +10,8 @@
 #include <time.h>
 #include <stdlib.h>
 #include <math.h>
-#include "../struct.h"
+#include "../include/struct.h"
+#include "../include/printc.h"
 
 #define STORAGE_ID "/SHM_TEST"
 //#define DATA "PID: %d"
@@ -55,15 +56,18 @@ int main(int argc, char *argv[])
 		printf("Missing arguments, please provide buffer name\n");
 		return 30;
 	}
+    char *suc_msg = malloc(sizeof(char) * 500);
     srand((unsigned)time(NULL));
     double sleep_time = ran_expo(atof(argv[2]));
+    sprintf(suc_msg, "Tiempo de ejecucion: %f\n", sleep_time);
+    printc(suc_msg, 4);
 
 	int fd;
 	buffer data;
 	buffer *addr;
     Info procInfo;
     ssize_t size = sizeof(data);
-    clock_t start, end;
+    clock_t start, end, slockStart, slockEnd, wTimeStart, wTimeEnd;
     double kernel;
     char date[50];
     char msg[10];
@@ -76,6 +80,7 @@ int main(int argc, char *argv[])
 	char *sem_msg = malloc(sizeof(char) * (strlen(argv[1]) + 2));
     char *var_msg = malloc(sizeof(char) * (strlen(argv[1]) + 4));
     char *sg_msg = malloc(sizeof(char) * (strlen(argv[1]) + 3));
+
 
     int done_startup = 0;
 
@@ -180,15 +185,23 @@ int main(int argc, char *argv[])
 
     if(globals->numProd >= globals->numProdAct){
         globals->numProdAct += 1;
+        globals->prodTotal +=1;
     }else{
         printf("No mas prod\n");
     }
 
-    printf("sleep_time %f", sleep_time);
+    int locked = 0;
+    int full = 1;
+
+
 
 	while(1){
-        int succes = 0;
         if(sem_m->S == 1 && sem_m->pids[sem_m->index] == procInfo.pid){
+            if(locked){
+                slockEnd = clock();
+                procInfo.waitingSTime += ((double) (slockEnd - slockStart)) / CLOCKS_PER_SEC;
+                locked = 0;
+            }
             sem_m->S = 0; //Semaforo del buffer down
 
             /*------------------------ Instrucciones de la Zona Critica -----------------------------------*/
@@ -196,6 +209,7 @@ int main(int argc, char *argv[])
             data.size = addr->size;
 	        //printf("PID %d: Read from shared memory\n", procInfo.pid);
             //printf("BufferSize: %d\n", data.size);
+            full = 1;
             for(int i = 0; i < addr->size; i++){
                 if(addr->data[i].inUse == 0){
                     addr->data[i].magicNum = procInfo.pid % 6;
@@ -205,15 +219,22 @@ int main(int argc, char *argv[])
                     sprintf(date, DATE, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
                     memcpy(addr->data[i].date, date, strlen(date) + 1);
                     addr->data[i].inUse = 1;
-                    printf("PID %d: introdujo mensaje en indice: %d\n", procInfo.pid, i);
+                    //printf("PID %d: introdujo mensaje en indice: %d\n", procInfo.pid, i);
+                    sprintf(suc_msg, "PID %d: introdujo mensaje en indice: %d\n", procInfo.pid, i);
+                    printc(suc_msg, 3);
                     procInfo.msjProducidos +=1;
-                    succes = 1;
+                    full = 0;
                     globals->totalMsg +=1;
                     globals->msgInBuff +=1;
                     break;
-                }else{
-                    //printf("MSG: %s\n", addr->data[i].date);
                 }
+            }
+            if(full){
+                wTimeEnd = clock();
+                procInfo.watingTime += ((double) (wTimeEnd - wTimeStart)) / CLOCKS_PER_SEC;
+            }
+            if(full){
+                wTimeStart = clock();
             }
 
             sem_m->index += 1; //Marca para que el indice de la cola aumente en 1 y el proximo en acceder al semaforo siga el orden
@@ -224,7 +245,10 @@ int main(int argc, char *argv[])
             sem_m->S = 1; //Up del semaforo
             end = clock();
             procInfo.kernelTime += ((double) (end - start)) / CLOCKS_PER_SEC;
-        }/*
+        }else{
+            slockStart = clock();
+            locked = 1;
+        }    /*
         for(int i = 0; i < sem_m->procCount; i++){
             printf("PID: %d\n", sem_m->pids[i]);
             printf("siguiente Pid: %d \n",sem_m->pids[sem_m->index]);
@@ -234,8 +258,13 @@ int main(int argc, char *argv[])
         if(sem_glob->S == 1){
             sem_glob->S == 0;
             if(globals->autodestroy == 1){
-                 globals->numProdAct -=1;
-                printf("PID: %d Mensajes producidos: %d, Tiempo de Esperado: %f, Tiempo bloqueado por Semaforos: %f, Tiempo en kernel: %f\n", procInfo.pid, procInfo.msjProducidos, procInfo.watingTime, procInfo.waitingSTime, procInfo.kernelTime);
+                globals->numProdAct -=1;
+                globals->totKernTime += procInfo.kernelTime;
+                globals->waitingTot += procInfo.watingTime;
+                globals->totUsrTime += procInfo.waitingSTime;
+                sprintf(suc_msg, "PID: %d Mensajes producidos: %d, Tiempo de Esperado: %f, Tiempo bloqueado por Semaforos: %f, Tiempo en kernel: %f\n", procInfo.pid, procInfo.msjProducidos, procInfo.watingTime, procInfo.waitingSTime, procInfo.kernelTime);
+                printc(suc_msg, 1);
+                //printf("PID: %d Mensajes producidos: %d, Tiempo de Esperado: %f, Tiempo bloqueado por Semaforos: %f, Tiempo en kernel: %f\n", procInfo.pid, procInfo.msjProducidos, procInfo.watingTime, procInfo.waitingSTime, procInfo.kernelTime);
                 return 0;
             }
             sem_glob->S = 1;

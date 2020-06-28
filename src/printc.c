@@ -6,8 +6,8 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/shm.h>
-#include "struct.h"
-#include "Memtools.h"
+#include "../include/struct.h"
+#include "../include/Memtools.h"
 #include <string.h>
 #include <stdlib.h>
 

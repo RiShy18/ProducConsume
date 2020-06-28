@@ -1,5 +1,5 @@
-#ifndef _PRINTC_H
-#define _PRINTC_H
+#ifndef _MEMTOOLS_H
+#define _MEMTOOLS_H
 
 #include <stdio.h>
 #include <time.h>

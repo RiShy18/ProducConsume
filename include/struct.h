@@ -23,12 +23,15 @@ typedef struct {
     int numConsAct; //Número de consumidores actual
     int numProdAct;
 
-    int consTotal;
-    int prodTotal;
-
     int msgInBuff; //Mensajes en Buffer
     int totalMsg; //Total de Mensajes
     int deletedCons; //Consumidores borrados
+    int prodTotal;
+    int consTotal;
+    double waitingTot;
+    double bloquedTot;
+    double totUsrTime;
+    double totKernTime;
 
     int autodestroy; //Flag to terminate all
 } Pack;    //Variables globales

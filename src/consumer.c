@@ -83,12 +83,18 @@ typedef struct {
     int numCons; //Max de consumidores
     int numProd; //Max de productores
 
-    int numConsAct; //Número de consumidores actual 
+    int numConsAct; //Número de consumidores actual
     int numProdAct;
 
     int msgInBuff; //Mensajes en Buffer
     int totalMsg; //Total de Mensajes
     int deletedCons; //Consumidores borrados
+    int prodTotal;
+    int consTotal;
+    double waitingTot;
+    double bloquedTot;
+    double totUsrTime;
+    double totKernTime;
 
     int autodestroy; //Flag to terminate all
 } Pack;    //Variables globales
@@ -214,15 +220,7 @@ int main(int argc, char *argv[])
 		perror("open");
 		return 10;
 	}
-    //printf("Nice");
-    // extend shared memory object as by default it's initialized with size 0
-	res = ftruncate(fd, size);
-	if (res == -1)
-	{
-		perror("ftruncate");
-		return 20;
-	}
-    // map shared memory to process address space
+    
 	global = (Pack *) mmap(NULL, sizeof(Pack), PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
 	if (global == MAP_FAILED)
 	{
@@ -374,6 +372,7 @@ int main(int argc, char *argv[])
         //pthread_join(thread_id, NULL);
         if(global->autodestroy == 1){
             //global->numCons = 0;
+            global->numConsAct -= 1;
             return 0;
         }
         end = clock();

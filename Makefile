@@ -1,19 +1,19 @@
-APP = Inicializador
+finalizador: organize inicializador producer consumer libprintc
+		gcc -o excecutables/terminator src/terminate.c lib/libprintc.a -lrt
 
+organize:
+		rm -r excecutables; mkdir excecutables
 
-SRC = $(APP).c
+inicializador:
+		gcc -o excecutables/inicializador src/Inicializador.c -lrt
 
-CC = gcc
-#CFLAGS = -lrt
+libprintc:
+		gcc -c src/printc.c
+		ar rv lib/libprintc.a printc.o
+		ranlib lib/libprintc.a
 
-PROD= ../ProducerCode
-CONS= ../consumerCode
+producer: libprintc
+		gcc -o excecutables/producer src/producer.c lib/libprintc.a -lrt -lm
 
-LIBS = -lrt
-
-
-
- 
-APP: 
-		$(CC) -o $(APP) $(SRC) $(LIBS)
-
+consumer: producer
+		gcc -o excecutables/consumer src/consumer.c -lpthread -lrt -lm

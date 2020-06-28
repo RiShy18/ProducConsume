@@ -172,9 +172,7 @@ int main(int argc, char *argv[])
 		return 30;
 	}
 
-    sem_m->procCount +=1;
 
-    sem_m->pids[sem_m->procCount - 1] = consInfo.pid;
     int i = 0;
     //Verifica si no hay espacio en el buffer para consumidores
     if(global->numCons == 0){
@@ -187,15 +185,20 @@ int main(int argc, char *argv[])
             if(global->numCons > 0){
                 printf("Se ha liberado un espacio");
                 break;
+            }else if(global->autodestroy == 1){
+                return 0;
             }
         }
     }
+    sem_m->procCount +=1;
+    sem_m->pids[sem_m->procCount - 1] = consInfo.pid;
     global->numCons -= 1;
     global->numConsAct += 1;
     global->consTotal += 1;
 	while(1){
         int succes = 0;
         //Verifica que el semáforo esté liberado y que sea el siguiente proceso en lista
+        printf("Siguiente pid: %d \n", sem_m->pids[sem_m->index]);
         if(sem_m->S == 1 && sem_m->pids[sem_m->index] == consInfo.pid){
             sem_m->S = 0;
 
@@ -271,7 +274,7 @@ int main(int argc, char *argv[])
                     global->numCons += 1;
                     global->numConsAct -= 1;
                     global->deletedCons += 1;
-                    sem_m->index = 1;
+                    sem_m->index = 0;
                     sem_m->procCount -= 1;
                     sem_m->S = 1;
                     return 0;

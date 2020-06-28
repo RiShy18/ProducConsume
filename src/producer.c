@@ -193,6 +193,8 @@ int main(int argc, char *argv[])
     int locked = 0;
     int full = 1;
 
+    procInfo.watingTime = sleep_time;
+
 
 
 	while(1){
@@ -222,7 +224,7 @@ int main(int argc, char *argv[])
                     addr->data[i].inUse = 1;
                     //printf("PID %d: introdujo mensaje en indice: %d\n", procInfo.pid, i);
                     printf("Mensaje: %s \n",addr->data[i].msg);
-                    sprintf(suc_msg, "PID %d: introdujo mensaje en indice: %d\n", procInfo.pid, i);
+                    sprintf(suc_msg, "PID %d: introdujo mensaje en indice: %d Consumidores activos: %d Productores Activos: %d\n", procInfo.pid, i, globals->numConsAct, globals->numProdAct);
                     printc(suc_msg, 3);
                     procInfo.msjProducidos +=1;
                     full = 0;
@@ -231,13 +233,14 @@ int main(int argc, char *argv[])
                     break;
                 }
             }
+            /*
             if(full){
                 wTimeEnd = clock();
                 procInfo.watingTime += ((double) (wTimeEnd - wTimeStart)) / CLOCKS_PER_SEC;
             }
             if(full){
                 wTimeStart = clock();
-            }
+            }*/
 
             sem_m->index += 1; //Marca para que el indice de la cola aumente en 1 y el proximo en acceder al semaforo siga el orden
             if(sem_m->index >= sem_m->procCount){//En caso de que al aumentar el indice se salga de la cantidad de procesos en cola

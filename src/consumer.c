@@ -270,6 +270,7 @@ int main(int argc, char *argv[])
                     }
                     global->numCons += 1;
                     global->numConsAct -= 1;
+                    global->deletedCons += 1;
                     sem_m->index = 1;
                     sem_m->procCount -= 1;
                     sem_m->S = 1;

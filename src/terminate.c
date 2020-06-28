@@ -73,9 +73,6 @@ int main(int argc, char *argv[])
 	sprintf(var_msg, "var_%s", argv[1]);
 	sprintf(sg_msg, "sg_%s", argv[1]);
 
-
-	printf("%s\n",var_msg);
-
     size_t size = sizeof(data);
 
 	pid = getpid();
@@ -156,6 +153,10 @@ int main(int argc, char *argv[])
 	}
 
 	global_vars->autodestroy = 1;
+
+	char *msg = malloc(sizeof(char) * 100);
+	sprintf(msg, "Esperando a que finalicen todos los productores y consumidores....");
+	printc(msg, 4);
 
 	while(1){
 		if(global_vars->numProdAct <= 0 && global_vars->numConsAct <= 0){

@@ -212,12 +212,13 @@ int main(int argc, char *argv[])
             full = 1;
             for(int i = 0; i < addr->size; i++){
                 if(addr->data[i].inUse == 0){
-                    addr->data[i].magicNum = procInfo.pid % 6;
+                    srand(time(0));
+                    addr->data[i].magicNum = (rand() % (6 - 0 + 1)) + 0;
                     addr->data[i].processID = (int) procInfo.pid;
-                    sprintf(msg, "PID: %d", procInfo.pid);
-                    memcpy(addr->data[i].msg, msg, strlen(msg) + 1);
-                    sprintf(date, DATE, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-                    memcpy(addr->data[i].date, date, strlen(date) + 1);
+                    sprintf(addr->data[i].msg, "PID: %d", procInfo.pid);
+                    //memcpy(addr->data[i].msg, msg, strlen(msg) + 1);
+                    sprintf(addr->data[i].date, DATE, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+                    //memcpy(addr->data[i].date, date, strlen(date) + 1);
                     addr->data[i].inUse = 1;
                     //printf("PID %d: introdujo mensaje en indice: %d\n", procInfo.pid, i);
                     sprintf(suc_msg, "PID %d: introdujo mensaje en indice: %d\n", procInfo.pid, i);

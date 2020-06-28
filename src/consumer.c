@@ -227,6 +227,7 @@ int main(int argc, char *argv[])
     }
     global->numCons -= 1;
     global->numConsAct += 1;
+    global->consTotal += 1;
 	while(1){
         int succes = 0;
         //Verifica que el semáforo esté liberado y que sea el siguiente proceso en lista

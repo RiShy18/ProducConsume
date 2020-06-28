@@ -262,9 +262,7 @@ int main(int argc, char *argv[])
                 if((addr->data[i].magicNum) == (consInfo.pid % 6)){
                     printf("Entra al if final");
                     //Borra el mensaje
-                    for(int w = i; w < (addr->size - 1); w++){
-                        addr->data[w] = addr->data[w+1];
-                    }
+                    addr->data[i].inUse = 0;
                     end = clock();
                     consInfo.UserTime +=  ((double) (end - start)) / CLOCKS_PER_SEC;
                     consInfo.msjConsumidos += 1;

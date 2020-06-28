@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <pthread.h> 
 #include <math.h>
+#include "../include/printc.h"
 
 #define STORAGE_ID "/SHM_TEST"
 #define DATE "%d-%02d-%02d %02d:%02d:%02d"
@@ -23,22 +24,22 @@ pthread_t thread_id2;
 double media;
 
 double U_Random (int random){
-    double f;
-    f =  rand() % 100 ;
-    return f/(100 * random);
+    double ran;
+    ran =  rand() % 100 ;
+    return ran/(100 * random);
 }
 
 int possion (int random)
 {
-    int Lambda = 5, k = 0;
-    long double p = 1.0;
-    long double l = exp (-Lambda);
-    while (p >= l){
+    int lambda = 5, d= 0;
+    long double o = 1.0;
+    long double w = exp (-lambda);
+    while (o >= w){
         double u = U_Random (random);
-        p *= u;
-        k ++;
+        o *= u;
+        d ++;
     }
-    return k-1;
+    return d-1;
 }
 
 typedef struct { //Struct de cada segmento del buffer
@@ -99,28 +100,6 @@ typedef struct {
     int autodestroy; //Flag to terminate all
 } Pack;    //Variables globales
 
-/*double U_Random ()/* generates a 0 ~ Random number between 1{
-double f;
-Srand (unsigned) time (NULL ));
-F = (float) (rand () % 100 );
-/* Printf ("% fn", f );
-return f/100;
-}
-
-
-int possion ()/* generates a random number with a Poisson distribution. Lamda is the average number 
-{
-    int Lambda = 20, k = 0;
-    long double p = 1.0;
-    long double l = exp (-Lambda);/* it is defined as long double for precision, and exp (-Lambda) is a decimal near 0 
-    printf ("%.15Lfn", l );
-    while (p> = l){
-        double u = U_Random ();
-        p * = u;
-        k ++;
-    }
-    return k-1;
-}*/
 Pack *global;
 
 void *sleepfunc(void *vargp){
@@ -373,6 +352,11 @@ int main(int argc, char *argv[])
         if(global->autodestroy == 1){
             //global->numCons = 0;
             global->numConsAct -= 1;
+                global->totKernTime += consInfo.UserTime;
+                global->waitingTot += consInfo.watingTime;
+                global->totUsrTime += consInfo.UserTime;
+                sprintf(msg, "PID: %d Mensajes producidos: %d, Tiempo de Esperado: %f, Tiempo en kernel: %f\n", consInfo.pid, consInfo.msjConsumidos, consInfo.watingTime, consInfo.UserTime);
+                printc(msg, 1);
             return 0;
         }
         end = clock();

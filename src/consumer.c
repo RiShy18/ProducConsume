@@ -236,9 +236,6 @@ int main(int argc, char *argv[])
 
             start = clock();
             data.size = addr->size;
-	        printf("PID %d: Read from shared memory\n", consInfo.pid);
-            printf("BufferSize: %d\n", data.size);
-            printf("En uso: %d \n",addr->data[0].inUse);
             //Verifica que existan mensajes
             if(addr->data[i].inUse != 0){
                 sprintf(msg,"El indice del mensaje actual es: %d \n", i);
@@ -356,11 +353,13 @@ int main(int argc, char *argv[])
         //Verifica la bandera autodestroy
         if(global->autodestroy == 1){
             global->numConsAct -= 1;
-                global->totKernTime += consInfo.UserTime;
-                global->waitingTot += consInfo.watingTime;
-                global->totUsrTime += consInfo.UserTime;
-                sprintf(msg, "PID: %d Mensajes producidos: %d, Tiempo de Esperado: %f, Tiempo en kernel: %f\n", consInfo.pid, consInfo.msjConsumidos, consInfo.watingTime, consInfo.UserTime);
-                printc(msg, 1);
+            end = clock();
+            consInfo.watingTime += ((double) (end - start)) / CLOCKS_PER_SEC;;
+            global->totKernTime += consInfo.UserTime;
+            global->waitingTot += consInfo.watingTime;
+            global->totUsrTime += consInfo.UserTime;
+            sprintf(msg, "PID: %d Mensajes producidos: %d, Tiempo de Esperado: %f, Tiempo en kernel: %f\n", consInfo.pid, consInfo.msjConsumidos, consInfo.watingTime, consInfo.UserTime);
+            printc(msg, 1);
             return 0;
         }
         end = clock();

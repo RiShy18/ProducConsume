@@ -3,7 +3,7 @@
  * @brief Modulo inicializador del productor/consumidor 
  *
  * @par       
- * COPYRIGHT NOTICE: (R) 2020 RMR. GNU licensed.
+ * (R) 2020 RMR. GNU licensed.
  */
 /* ----------------------------------Include Spot------------------------ */
 #include <stdint.h>

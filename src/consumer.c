@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
                 printf("\033[1;32m");
                 printf("%s",msg);
                 printf("\033[0m");                
-                sprintf(msg,"El mensaje leído dice: %s \n", addr->data[i].msg);
+                sprintf(msg,"El mensaje leído dice: %s %s %d \n", addr->data[i].msg, addr->data[i].date, addr->data[i].magicNum);
                 printf("\033[1;32m");
                 printf("%s",msg);
                 printf("\033[0m");

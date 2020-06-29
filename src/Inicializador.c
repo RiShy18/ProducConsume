@@ -4,6 +4,7 @@
  *
  * @par       
  * (R) 2020 RMR. GNU licensed.
+ * Based on https://gist.github.com/garcia556/8231e844a90457c99cc72e5add8388e4
  */
 /* ----------------------------------Include Spot------------------------ */
 #include <stdint.h>
